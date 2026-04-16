@@ -29,6 +29,10 @@ import { SubscribeDetail } from "@/sections/subscribe/detail";
 import StripePayment from "@/sections/user/payment/stripe";
 import { useGlobalStore } from "@/stores/global";
 import { setAuthorization } from "@/utils/common";
+import {
+  encodeOrderNoForSearch,
+  normalizeOrderNo,
+} from "@/utils/order-no";
 
 export default function Order() {
   const { t } = useTranslation("order");
@@ -67,7 +71,7 @@ export default function Order() {
     queryFn: async () => {
       const { data } = await purchaseCheckout({
         orderNo: orderNo || "",
-        returnUrl: window.location.href,
+        returnUrl: `${window.location.origin}${window.location.pathname}#/payment?order_no=${encodeOrderNoForSearch(orderNo || "")}`,
       });
       if (data.data?.type === "url" && data.data?.checkout_url) {
         window.open(data.data.checkout_url, "_blank");
@@ -77,8 +81,9 @@ export default function Order() {
   });
 
   useEffect(() => {
-    if (search.order_no) {
-      setOrderNo(search.order_no);
+    const nextOrderNo = normalizeOrderNo(search.order_no);
+    if (nextOrderNo) {
+      setOrderNo(nextOrderNo);
       setEnabled(true);
     }
   }, [search]);

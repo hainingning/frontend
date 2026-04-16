@@ -25,6 +25,10 @@ import { Display } from "@/components/display";
 import { SubscribeBilling } from "@/sections/subscribe/billing";
 import { SubscribeDetail } from "@/sections/subscribe/detail";
 import { useGlobalStore } from "@/stores/global";
+import {
+  encodeOrderNoForSearch,
+  normalizeOrderNo,
+} from "@/utils/order-no";
 import StripePayment from "./stripe";
 
 const routeApi = getRouteApi("/(main)/payment");
@@ -32,7 +36,8 @@ const routeApi = getRouteApi("/(main)/payment");
 export default function Page() {
   const { t } = useTranslation("order");
   const { getUserInfo } = useGlobalStore();
-  const { order_no } = routeApi.useSearch() as { order_no?: string };
+  const rawOrderNo = (routeApi.useSearch() as { order_no?: unknown }).order_no;
+  const order_no = normalizeOrderNo(rawOrderNo);
   const [enabled, setEnabled] = useState<boolean>(!!order_no);
 
   useEffect(() => {
@@ -61,7 +66,7 @@ export default function Page() {
     queryFn: async () => {
       const { data } = await purchaseCheckout({
         orderNo: order_no!,
-        returnUrl: window.location.href,
+        returnUrl: `${window.location.origin}${window.location.pathname}#/payment?order_no=${encodeOrderNoForSearch(order_no!)}`,
       });
       if (data.data?.type === "url" && data.data.checkout_url) {
         window.open(data.data.checkout_url, "_blank");
