@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearch } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -24,22 +24,19 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Display } from "@/components/display";
+import { useOrderNo } from "@/hooks/use-order-no";
 import { SubscribeBilling } from "@/sections/subscribe/billing";
 import { SubscribeDetail } from "@/sections/subscribe/detail";
 import StripePayment from "@/sections/user/payment/stripe";
 import { useGlobalStore } from "@/stores/global";
 import { setAuthorization } from "@/utils/common";
-import {
-  encodeOrderNoForSearch,
-  normalizeOrderNo,
-} from "@/utils/order-no";
+import { encodeOrderNoForSearch } from "@/utils/order-no";
 
 export default function Order() {
   const { t } = useTranslation("order");
   const { getUserInfo } = useGlobalStore();
-  const [orderNo, setOrderNo] = useState<string>();
+  const orderNo = useOrderNo();
   const [enabled, setEnabled] = useState<boolean>(false);
-  const search = useSearch({ from: "/(main)/purchasing/order/" });
 
   const { data } = useQuery({
     enabled,
@@ -81,12 +78,8 @@ export default function Order() {
   });
 
   useEffect(() => {
-    const nextOrderNo = normalizeOrderNo(search.order_no);
-    if (nextOrderNo) {
-      setOrderNo(nextOrderNo);
-      setEnabled(true);
-    }
-  }, [search]);
+    setEnabled(Boolean(orderNo));
+  }, [orderNo]);
 
   const [countDown, formattedRes] = useCountDown({
     targetDate:

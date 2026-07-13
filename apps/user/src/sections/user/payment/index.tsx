@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getRouteApi, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -22,22 +22,17 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Display } from "@/components/display";
+import { useOrderNo } from "@/hooks/use-order-no";
 import { SubscribeBilling } from "@/sections/subscribe/billing";
 import { SubscribeDetail } from "@/sections/subscribe/detail";
 import { useGlobalStore } from "@/stores/global";
-import {
-  encodeOrderNoForSearch,
-  normalizeOrderNo,
-} from "@/utils/order-no";
+import { encodeOrderNoForSearch } from "@/utils/order-no";
 import StripePayment from "./stripe";
-
-const routeApi = getRouteApi("/(main)/payment");
 
 export default function Page() {
   const { t } = useTranslation("order");
   const { getUserInfo } = useGlobalStore();
-  const rawOrderNo = (routeApi.useSearch() as { order_no?: unknown }).order_no;
-  const order_no = normalizeOrderNo(rawOrderNo);
+  const order_no = useOrderNo();
   const [enabled, setEnabled] = useState<boolean>(!!order_no);
 
   useEffect(() => {
