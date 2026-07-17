@@ -31,7 +31,7 @@ const nullableInteger = z.preprocess(
       ? undefined
       : Number(value),
   z.number().int().optional()
-);
+).optional();
 const nullableALPN = z.array(z.enum(ALPN_VALUES)).nullish();
 
 const pluginOptions = z
