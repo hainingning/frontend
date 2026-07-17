@@ -87,13 +87,7 @@ export type OutboundFieldGroup =
   | "routing";
 export type OutboundFieldConfig = {
   name: keyof OutboundConfigFormData;
-  type:
-    | "text"
-    | "number"
-    | "select"
-    | "boolean"
-    | "textarea"
-    | "string-list";
+  type: "text" | "number" | "select" | "boolean" | "textarea" | "string-list";
   label: string;
   placeholder?: string;
   options?: { label: string; value: string }[];
@@ -164,10 +158,7 @@ export function normalizeOutboundConfig(
     defaultSecurityForProtocol(protocol)
   );
   if (["hysteria2", "tuic"].includes(protocol)) security = "tls";
-  if (
-    protocol === "anytls" &&
-    !["tls", "reality"].includes(security)
-  ) {
+  if (protocol === "anytls" && !["tls", "reality"].includes(security)) {
     security = "tls";
   }
   const reality = security === "reality";
@@ -298,7 +289,10 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       label: t("name", "Name"),
       group: "basic",
       required: true,
-      placeholder: t("server_config.fields.outbound_name_placeholder", "Configuration name"),
+      placeholder: t(
+        "server_config.fields.outbound_name_placeholder",
+        "Configuration name"
+      ),
     },
     {
       name: "protocol",
@@ -313,8 +307,12 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       type: "text",
       label: t("address", "Address"),
       group: "basic",
-      placeholder: t("server_config.fields.outbound_address_placeholder", "Server address"),
-      visible: (item) => !["direct", "reject"].includes(String(item.protocol || "")),
+      placeholder: t(
+        "server_config.fields.outbound_address_placeholder",
+        "Server address"
+      ),
+      visible: (item) =>
+        !["direct", "reject"].includes(String(item.protocol || "")),
     },
     {
       name: "port",
@@ -323,7 +321,8 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       group: "basic",
       min: 1,
       max: 65_535,
-      visible: (item) => !["direct", "reject"].includes(String(item.protocol || "")),
+      visible: (item) =>
+        !["direct", "reject"].includes(String(item.protocol || "")),
     },
     {
       name: "user",
@@ -335,9 +334,20 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
     {
       name: "password",
       type: "text",
-      label: t("server_config.fields.outbound_password_placeholder", "Password / secret"),
+      label: t(
+        "server_config.fields.outbound_password_placeholder",
+        "Password / secret"
+      ),
       group: "auth",
-      visible: protocolIs("http", "socks", "shadowsocks", "trojan", "anytls", "tuic", "hysteria2"),
+      visible: protocolIs(
+        "http",
+        "socks",
+        "shadowsocks",
+        "trojan",
+        "anytls",
+        "tuic",
+        "hysteria2"
+      ),
     },
     {
       name: "uuid",
@@ -353,7 +363,10 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       group: "auth",
       options: [
         ...SS_CIPHERS.map((cipher) => ({ label: cipher, value: cipher })),
-        { label: "2022-blake3-chacha20-poly1305", value: "2022-blake3-chacha20-poly1305" },
+        {
+          label: "2022-blake3-chacha20-poly1305",
+          value: "2022-blake3-chacha20-poly1305",
+        },
         { label: "auto", value: "auto" },
       ],
       visible: protocolIs("shadowsocks", "vmess"),
@@ -364,7 +377,8 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       label: t("security", "Security"),
       group: "security",
       options: [],
-      visible: (item) => getOutboundSecurityOptions(String(item.protocol || "")).length > 1,
+      visible: (item) =>
+        getOutboundSecurityOptions(String(item.protocol || "")).length > 1,
     },
     {
       name: "sni",
@@ -419,14 +433,18 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       type: "text",
       label: t("host", "Host"),
       group: "transport",
-      visible: (item) => ["ws", "httpupgrade", "xhttp", "grpc"].includes(String(item.transport || "")),
+      visible: (item) =>
+        ["ws", "httpupgrade", "xhttp", "grpc"].includes(
+          String(item.transport || "")
+        ),
     },
     {
       name: "path",
       type: "text",
       label: t("path", "Path"),
       group: "transport",
-      visible: (item) => ["ws", "httpupgrade", "xhttp"].includes(String(item.transport || "")),
+      visible: (item) =>
+        ["ws", "httpupgrade", "xhttp"].includes(String(item.transport || "")),
     },
     {
       name: "service_name",
@@ -469,7 +487,10 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       label: t("flow", "Flow"),
       group: "auth",
       options: [selected("none", t), selected("xtls-rprx-vision", t)],
-      visible: (item) => item.protocol === "vless" && item.transport === "tcp" && item.security === "tls",
+      visible: (item) =>
+        item.protocol === "vless" &&
+        item.transport === "tcp" &&
+        item.security === "tls",
     },
     {
       name: "multiplex",
@@ -493,7 +514,9 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       group: "protocol",
       min: 1,
       max: 2,
-      visible: (item) => UOT_PROTOCOLS.includes(String(item.protocol || "")) && item.uot === true,
+      visible: (item) =>
+        UOT_PROTOCOLS.includes(String(item.protocol || "")) &&
+        item.uot === true,
     },
     {
       name: "encryption",
@@ -579,7 +602,10 @@ export function getOutboundFields(t: any): OutboundFieldConfig[] {
       label: t("server_config.tabs.outbound", "Outbound Rules"),
       group: "routing",
       className: "col-span-2",
-      placeholder: t("server_config.fields.outbound_rules_placeholder", "One rule per line"),
+      placeholder: t(
+        "server_config.fields.outbound_rules_placeholder",
+        "One rule per line"
+      ),
     },
   ];
 }

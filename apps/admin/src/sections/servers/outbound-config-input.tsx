@@ -159,7 +159,7 @@ export function OutboundConfigInput({
   function updateItem(
     index: number,
     field: OutboundFieldConfig,
-    fieldValue: string | number | boolean
+    fieldValue: string | number | boolean | string[]
   ) {
     const current = items[index] || createOutboundConfig();
     let next: Record<string, unknown>;

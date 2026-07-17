@@ -80,7 +80,7 @@ export default function User() {
             confirmText={t("confirm", "Confirm")}
             description={t(
               "deleteDescription",
-              "This action cannot be undone.",
+              "This action cannot be undone."
             )}
             key="edit"
             onConfirm={async () => {
@@ -297,7 +297,7 @@ export default function User() {
           key: "user_subscribe_token",
           placeholder: t(
             "subscriptionTokenOrUrl",
-            "Subscription URL / Token / UUID",
+            "Subscription URL / Token / UUID"
           ),
         },
       ]}
@@ -306,7 +306,7 @@ export default function User() {
           ...pagination,
           ...filter,
           user_subscribe_token: extractSubscribeTokenOrUuid(
-            filter.user_subscribe_token,
+            filter.user_subscribe_token
           ),
         });
         return {
@@ -320,11 +320,11 @@ export default function User() {
 
 function extractSubscribeTokenOrUuid(value: unknown) {
   if (typeof value !== "string") {
-    return undefined;
+    return;
   }
   const input = value.trim();
   if (!input) {
-    return undefined;
+    return;
   }
   const queryIndex = input.indexOf("?");
   const search =

@@ -25,13 +25,7 @@ const nullableString = z.string().nullish();
 const nullableBool = z.boolean().nullish();
 const nullablePort = z.number().int().min(0).max(65_535).nullish();
 const nullableRatio = z.number().min(0).nullish();
-const nullableInteger = z.preprocess(
-  (value) =>
-    value === "" || value === null || value === undefined
-      ? undefined
-      : Number(value),
-  z.number().int().optional()
-);
+const nullableInteger = z.coerce.number().int().optional();
 const nullableALPN = z.array(z.enum(ALPN_VALUES)).nullish();
 
 const pluginOptions = z

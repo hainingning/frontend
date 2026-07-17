@@ -237,7 +237,10 @@ function DynamicField({
                   onValueChange={(value) => {
                     fieldProps.onChange(value);
                     if (field.name === "security") {
-                      if (value === "tls" && protocolData.cert_mode === "none") {
+                      if (
+                        value === "tls" &&
+                        protocolData.cert_mode === "none"
+                      ) {
                         form.setValue(
                           `protocols.${protocolIndex}.cert_mode`,
                           "self"
@@ -640,8 +643,7 @@ export default function ServerForm(props: {
           fieldNames.filter((name) => {
             const sameName = fields.filter((field) => field.name === name);
             return sameName.every(
-              (field) =>
-                field.condition && !field.condition(protocol, {})
+              (field) => field.condition && !field.condition(protocol, {})
             );
           })
         );
