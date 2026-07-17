@@ -68,7 +68,7 @@ export function ColumnFilter<TData>({
                 : "";
           return (
             <Input
-              className="block min-w-32"
+              className="min-w-[240px] max-w-xs"
               key={param.key}
               onChange={(event) => {
                 const v = event.target.value;
@@ -82,7 +82,7 @@ export function ColumnFilter<TData>({
         }
         return (
           <Input
-            className="min-w-32"
+            className="min-w-[240px] max-w-xs"
             key={param.key}
             onChange={(event) => updateFilter(param.key, event.target.value)}
             placeholder={param.placeholder || "Search..."}
