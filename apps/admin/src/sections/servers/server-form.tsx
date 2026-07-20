@@ -657,11 +657,11 @@ export default function ServerForm(props: {
           })
         );
         if (normalized.plugin === "none") {
-          delete normalized.plugin;
-          delete normalized.plugin_opts;
+          normalized.plugin = undefined;
+          normalized.plugin_opts = undefined;
         }
         if (normalized.multiplex === "none") {
-          delete normalized.multiplex;
+          normalized.multiplex = undefined;
         }
         return normalized;
       });

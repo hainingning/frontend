@@ -16,18 +16,142 @@ import {
   subscribeSort,
   updateSubscribe,
 } from "@workspace/ui/services/admin/subscribe";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Display } from "@/components/display";
 import { useSubscribe } from "@/stores/subscribe";
 import SubscribeForm from "./subscribe-form";
 
+type SubscribeStatus = {
+  sell: boolean;
+  show: boolean;
+};
+
+type PendingStatusUpdate = {
+  item: API.SubscribeItem;
+  revision: number;
+};
+
+function AnimatedStatusSwitch({
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  const [visualChecked, setVisualChecked] = useState(checked);
+
+  useEffect(() => {
+    setVisualChecked(checked);
+  }, [checked]);
+
+  return (
+    <Switch
+      checked={visualChecked}
+      disabled={disabled}
+      onCheckedChange={(nextChecked) => {
+        setVisualChecked(nextChecked);
+        onCheckedChange(nextChecked);
+      }}
+    />
+  );
+}
+
 export default function SubscribeTable() {
   const { t } = useTranslation("product");
   const [loading, setLoading] = useState(false);
   const ref = useRef<ProTableActions>(null);
+  const statusOverrides = useRef(new Map<number, SubscribeStatus>());
+  const pendingStatusUpdates = useRef(new Map<number, PendingStatusUpdate>());
   const { fetchSubscribes } = useSubscribe();
+
+  const refreshSubscribeData = () => {
+    ref.current?.refresh();
+    fetchSubscribes();
+  };
+
+  const persistStatusUpdate = async (
+    id: number,
+    pending: PendingStatusUpdate
+  ) => {
+    while (pendingStatusUpdates.current.get(id) === pending) {
+      const revision = pending.revision;
+      const payload = {
+        ...pending.item,
+        // The list API represents an empty node tag as [""]. Sending that value
+        // back makes the server clear the explicitly selected nodes.
+        node_tags: pending.item.node_tags?.filter(Boolean),
+      } as API.UpdateSubscribeRequest;
+
+      try {
+        await updateSubscribe(payload);
+      } catch {
+        if (pendingStatusUpdates.current.get(id) === pending) {
+          pendingStatusUpdates.current.delete(id);
+          statusOverrides.current.delete(id);
+        }
+        toast.error(t("updateError", "Update failed"));
+        refreshSubscribeData();
+        return;
+      }
+
+      if (revision === pending.revision) {
+        pendingStatusUpdates.current.delete(id);
+        // Keep the optimistic values visible until the refreshed list arrives.
+        // The request callback below removes the override after fresh data is read.
+        refreshSubscribeData();
+        return;
+      }
+    }
+  };
+
+  const updateStatus = (
+    item: API.SubscribeItem,
+    field: keyof SubscribeStatus,
+    checked: boolean
+  ) => {
+    if (item.id === undefined) return;
+
+    const id = item.id;
+    const existing = pendingStatusUpdates.current.get(id);
+    const currentStatus = existing
+      ? {
+          sell: Boolean(existing.item.sell),
+          show: Boolean(existing.item.show),
+        }
+      : statusOverrides.current.get(id) || {
+          sell: Boolean(item.sell),
+          show: Boolean(item.show),
+        };
+    const nextStatus = { ...currentStatus, [field]: checked };
+
+    statusOverrides.current.set(id, nextStatus);
+
+    if (existing) {
+      existing.item = { ...existing.item, ...nextStatus };
+      existing.revision += 1;
+      return;
+    }
+
+    const pending = {
+      item: { ...item, ...nextStatus },
+      revision: 0,
+    };
+    pendingStatusUpdates.current.set(id, pending);
+    persistStatusUpdate(id, pending);
+  };
+
+  const getStatus = (item: API.SubscribeItem): SubscribeStatus =>
+    (item.id === undefined
+      ? undefined
+      : statusOverrides.current.get(item.id)) || {
+      sell: Boolean(item.sell),
+      show: Boolean(item.show),
+    };
+
   return (
     <ProTable<API.SubscribeItem, { group_id: number; query: string }>
       action={ref}
@@ -132,16 +256,12 @@ export default function SubscribeTable() {
           accessorKey: "show",
           header: t("show"),
           cell: ({ row }) => (
-            <Switch
-              defaultChecked={row.getValue("show")}
-              onCheckedChange={async (checked) => {
-                await updateSubscribe({
-                  ...row.original,
-                  show: checked,
-                } as API.UpdateSubscribeRequest);
-                ref.current?.refresh();
-                fetchSubscribes();
-              }}
+            <AnimatedStatusSwitch
+              checked={getStatus(row.original).show}
+              disabled={row.original.id === undefined}
+              onCheckedChange={(checked) =>
+                updateStatus(row.original, "show", checked)
+              }
             />
           ),
         },
@@ -149,16 +269,12 @@ export default function SubscribeTable() {
           accessorKey: "sell",
           header: t("sell"),
           cell: ({ row }) => (
-            <Switch
-              defaultChecked={row.getValue("sell")}
-              onCheckedChange={async (checked) => {
-                await updateSubscribe({
-                  ...row.original,
-                  sell: checked,
-                } as API.UpdateSubscribeRequest);
-                ref.current?.refresh();
-                fetchSubscribes();
-              }}
+            <AnimatedStatusSwitch
+              checked={getStatus(row.original).sell}
+              disabled={row.original.id === undefined}
+              onCheckedChange={(checked) =>
+                updateStatus(row.original, "sell", checked)
+              }
             />
           ),
         },
@@ -318,8 +434,17 @@ export default function SubscribeTable() {
           ...pagination,
           ...filters,
         });
+        const list = data.data?.list || [];
+        for (const item of list) {
+          if (
+            item.id !== undefined &&
+            !pendingStatusUpdates.current.has(item.id)
+          ) {
+            statusOverrides.current.delete(item.id);
+          }
+        }
         return {
-          list: data.data?.list || [],
+          list,
           total: data.data?.total || 0,
         };
       }}
