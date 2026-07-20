@@ -25,6 +25,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Display } from "@/components/display";
 import { useOrderNo } from "@/hooks/use-order-no";
+import { usePaymentWindow } from "@/hooks/use-payment-window";
 import { SubscribeBilling } from "@/sections/subscribe/billing";
 import { SubscribeDetail } from "@/sections/subscribe/detail";
 import StripePayment from "@/sections/user/payment/stripe";
@@ -37,6 +38,7 @@ export default function Order() {
   const { getUserInfo } = useGlobalStore();
   const orderNo = useOrderNo();
   const [enabled, setEnabled] = useState<boolean>(false);
+  const paymentWindowRef = usePaymentWindow(orderNo);
 
   const { data } = useQuery({
     enabled,
@@ -68,18 +70,32 @@ export default function Order() {
     queryFn: async () => {
       const { data } = await purchaseCheckout({
         orderNo: orderNo || "",
-        returnUrl: `${window.location.origin}${window.location.pathname}#/payment?order_no=${encodeOrderNoForSearch(orderNo || "")}`,
+        returnUrl: `${window.location.origin}${window.location.pathname}#/payment?payment_return=1&order_no=${encodeOrderNoForSearch(orderNo || "")}`,
       });
       if (data.data?.type === "url" && data.data?.checkout_url) {
-        window.open(data.data.checkout_url, "_blank");
+        paymentWindowRef.current = window.open(
+          data.data.checkout_url,
+          "_blank"
+        );
       }
       return data?.data;
     },
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
   });
 
   useEffect(() => {
     setEnabled(Boolean(orderNo));
   }, [orderNo]);
+
+  useEffect(() => {
+    if (data?.status && [2, 5].includes(data.status)) {
+      paymentWindowRef.current?.close();
+      paymentWindowRef.current = null;
+    }
+  }, [data?.status]);
 
   const [countDown, formattedRes] = useCountDown({
     targetDate:

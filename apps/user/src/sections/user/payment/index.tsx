@@ -22,7 +22,11 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Display } from "@/components/display";
-import { useOrderNo } from "@/hooks/use-order-no";
+import { useIsPaymentReturn, useOrderNo } from "@/hooks/use-order-no";
+import {
+  notifyPaymentSuccess,
+  usePaymentWindow,
+} from "@/hooks/use-payment-window";
 import { SubscribeBilling } from "@/sections/subscribe/billing";
 import { SubscribeDetail } from "@/sections/subscribe/detail";
 import { useGlobalStore } from "@/stores/global";
@@ -33,7 +37,9 @@ export default function Page() {
   const { t } = useTranslation("order");
   const { getUserInfo } = useGlobalStore();
   const order_no = useOrderNo();
+  const isPaymentReturn = useIsPaymentReturn();
   const [enabled, setEnabled] = useState<boolean>(!!order_no);
+  const paymentWindowRef = usePaymentWindow(order_no);
 
   useEffect(() => {
     if (order_no) {
@@ -56,19 +62,38 @@ export default function Page() {
   });
 
   const { data: payment } = useQuery({
-    enabled: !!order_no && data?.status === 1,
+    enabled: !isPaymentReturn && !!order_no && data?.status === 1,
     queryKey: ["purchaseCheckout", order_no],
     queryFn: async () => {
       const { data } = await purchaseCheckout({
         orderNo: order_no!,
-        returnUrl: `${window.location.origin}${window.location.pathname}#/payment?order_no=${encodeOrderNoForSearch(order_no!)}`,
+        returnUrl: `${window.location.origin}${window.location.pathname}#/payment?payment_return=1&order_no=${encodeOrderNoForSearch(order_no!)}`,
       });
       if (data.data?.type === "url" && data.data.checkout_url) {
-        window.open(data.data.checkout_url, "_blank");
+        paymentWindowRef.current = window.open(
+          data.data.checkout_url,
+          "_blank"
+        );
       }
       return data?.data;
     },
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
   });
+
+  useEffect(() => {
+    if (!(data?.status && [2, 5].includes(data.status))) return;
+
+    paymentWindowRef.current?.close();
+    paymentWindowRef.current = null;
+
+    if (isPaymentReturn && order_no) {
+      notifyPaymentSuccess(order_no);
+      window.close();
+    }
+  }, [data?.status, isPaymentReturn, order_no, paymentWindowRef]);
 
   const [countDown, formattedRes] = useCountDown({
     targetDate:
