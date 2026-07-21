@@ -33,6 +33,7 @@
   "invalidEmail": "Please enter a valid email address",
   "Minute": "Minute",
   "Month": "Month",
+  "notForSale": "Not available for purchase",
   "NoLimit": "No Limit",
   "passwordHint": "If you do not enter a password, we will automatically generate one and send it to your email.",
   "paymentMethod": "Payment Method",

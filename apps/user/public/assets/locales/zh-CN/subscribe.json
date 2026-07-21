@@ -33,6 +33,7 @@
   "invalidEmail": "请输入有效的邮箱地址",
   "Minute": "分钟",
   "Month": "月",
+  "notForSale": "暂不可购买",
   "NoLimit": "无限制",
   "passwordHint": "如果您不输入密码，我们将自动生成一个并发送到您的邮箱。",
   "paymentMethod": "支付方式",
